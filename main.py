@@ -215,6 +215,7 @@ input_label = customtkinter.CTkLabel(left_frame, text="Custom resolution(width,h
 
 input_1 = customtkinter.CTkEntry(master=left_frame)
 input_1.bind("<KeyRelease>", lambda event: validate_input_submit())
+
 input_2 = customtkinter.CTkEntry(master=left_frame)
 input_2.bind("<KeyRelease>", lambda event: validate_input_submit())
 
