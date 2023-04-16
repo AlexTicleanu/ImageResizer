@@ -112,7 +112,6 @@ def resize_image(image_route, width_int, height_int):
 
 
 def submit():
-    # validate_filename_not_empty()
     validate_custom()
     output_path()
     if aspect_var.get() == 'Custom':
@@ -121,6 +120,8 @@ def submit():
         (x, y) = dropdown_callback()
         img = resize_image(path_var.get(), x, y)
     cv2.imwrite(output_var.get(), img)
+    image_label.configure(image=image)
+    path_var.set('')
 
 
 def update_resolutions(*args):
