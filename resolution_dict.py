@@ -1,3 +1,5 @@
+import tkinter as tk
+
 picture_sizes = {
     'Custom': {},
     '1:1': {
@@ -26,3 +28,18 @@ picture_sizes = {
         '3840x2160': (3840, 2160)
     }
 }
+
+
+aspect_var = tk.StringVar()
+path_var = tk.StringVar()
+output_var = tk.StringVar()
+width_image = tk.StringVar()
+width_image.set("-")
+height_image = tk.StringVar()
+height_image.set("-")
+dropdown_var = tk.StringVar()
+dropdown_var.set("-")
+aspect_var.set("-")
+
+
+
