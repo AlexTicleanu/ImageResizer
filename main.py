@@ -1,12 +1,13 @@
-import string
+import os
 import tkinter as tk
 from tkinter import filedialog
 from PIL import Image, ImageOps
 import cv2
 import customtkinter
+import string
 import random
 from image_functions import original_image_data, resize_image, reset_app
-from validations import validate_custom
+from validations import validate_custom, output_path, dropdown_callback, output_path_dir
 
 
 def browse_file():
@@ -59,24 +60,6 @@ def browse_folder():
         print(f"Error while processing {filepath}: {e}")
 
 
-def output_path():
-    from resolution_dict import path_var, output_var
-    random_name = ''.join(random.choices(string.ascii_lowercase, k=5))
-    output = filedialog.asksaveasfilename(
-                defaultextension='.jpg', filetypes=[("JPEG", '*.jpg'), ("PNG", '*.png')],
-                initialdir=path_var.get(), initialfile=f'image_{random_name}_w_{width_image.get()}_h_{height_image.get()}',
-                title="Choose filename")
-    output_var.set(output)
-
-
-def dropdown_callback(*args):
-    from resolution_dict import picture_sizes, dropdown_var, aspect_var
-    try:
-        return picture_sizes[aspect_var.get()][dropdown_var.get()]
-    except KeyError:
-        pass
-
-
 def aspect_call(*args):
     from resolution_dict import aspect_var
     if aspect_var.get() == 'Custom':
@@ -112,16 +95,33 @@ def validate_dropdown_submit(*args):
 def submit():
     from resolution_dict import aspect_var, path_var, output_var
     validate_custom(input_1, input_2)
-    output_path()
-    if aspect_var.get() == 'Custom':
-        img = resize_image(path_var.get(), int(input_1.get()), int(input_2.get()))
-    else:
-        (x, y) = dropdown_callback()
-        img = resize_image(path_var.get(), x, y)
+    if os.path.isfile(path_var.get()):
+        output_path()
+        if aspect_var.get() == 'Custom':
+            img = resize_image(path_var.get(), int(input_1.get()), int(input_2.get()))
+        else:
+            (x, y) = dropdown_callback()
+            img = resize_image(path_var.get(), x, y)
 
-    cv2.imwrite(output_var.get(), img)
-    image_label.configure(image=image)
-    reset_app()
+        cv2.imwrite(output_var.get(), img)
+        image_label.configure(image=image)
+        reset_app()
+    else:
+        output_path_dir()
+        for filename in os.listdir(path_var.get()):
+            f = os.path.join(path_var.get(), filename)
+            if os.path.isfile(f):
+                if aspect_var.get() == 'Custom':
+                    img = resize_image(f, int(input_1.get()), int(input_2.get()))
+                else:
+                    (x, y) = dropdown_callback()
+                    img = resize_image(f, x, y)
+                random_name = ''.join(random.choices(string.ascii_lowercase, k=5))
+                save_each_file = os.path.join(output_var.get(),
+                                              f'image_{random_name}_w_{width_image.get()}_h_{height_image.get()}')
+                cv2.imwrite(save_each_file, img)
+        image_label.configure(image=image)
+        reset_app()
 
 
 def update_resolutions(*args):
