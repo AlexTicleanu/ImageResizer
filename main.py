@@ -118,7 +118,7 @@ def submit():
                     img = resize_image(f, x, y)
                 random_name = ''.join(random.choices(string.ascii_lowercase, k=5))
                 save_each_file = os.path.join(output_var.get(),
-                                              f'image_{random_name}_w_{width_image.get()}_h_{height_image.get()}')
+                                              f'image_{random_name}_w_{width_image.get()}_h_{height_image.get()}.jpg')
                 cv2.imwrite(save_each_file, img)
         image_label.configure(image=image)
         reset_app()
