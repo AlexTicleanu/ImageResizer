@@ -47,7 +47,7 @@ def browse_folder():
     try:
         filepath = filedialog.askdirectory()
         path_var.set(filepath)
-        image_obj = Image.open('folder.png')
+        image_obj = Image.open('default_images/folder.png')
         image_asset = customtkinter.CTkImage(image_obj, size=(350, 350))
         image_label.configure(image=image_asset, width=350, height=350)
         image_label.image = image_asset
@@ -159,7 +159,7 @@ aspect_var.trace('w', update_resolutions)
 
 left_frame = customtkinter.CTkFrame(root)
 right_frame = customtkinter.CTkFrame(root)
-default_image = Image.open("placeholder.jpg")
+default_image = Image.open("default_images/placeholder.jpg")
 default_image = default_image.resize((400, 400), Image.LANCZOS)
 
 browse_button = customtkinter.CTkButton(left_frame, text="Upload File", command=browse_file)
