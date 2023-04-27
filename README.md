@@ -5,6 +5,9 @@
 ## Introduction
 This application allows users to resize images in two different ways, either by selecting a resolution from a list or by inputting a custom resolution. The user can select a single image or a folder of images to resize, and the output images are saved to a specified location.
 
+![image](https://user-images.githubusercontent.com/48204339/234834883-8bf15ad5-bd1f-4ea8-a263-d44db1760cab.png)
+
+
 ## Prerequisites
 - Python 3.x
 - tkinter
