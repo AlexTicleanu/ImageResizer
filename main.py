@@ -1,57 +1,23 @@
-import string
+import os
 import tkinter as tk
 from tkinter import filedialog
 from PIL import Image, ImageOps
 import cv2
 import customtkinter
+import string
 import random
-
-
-picture_sizes = {
-    'Custom': {},
-    '1:1': {
-        '1080x1080': (1080, 1080),
-        '1200x1200': (1200, 1200),
-        '2048x2048': (2048, 2048)
-    },
-    '3:2': {
-        '1024x683': (1024, 683),
-        '1920x1280': (1920, 1280),
-        '2400x1600': (2400, 1600)
-    },
-    '2:3': {
-        '683x1024': (683, 1024),
-        '1280x1920': (1280, 1920),
-        '1600x2400': (1600, 2400)
-    },
-    '4:3': {
-        '800x600': (800, 600),
-        '1024x768': (1024, 768),
-        '1600x1200': (1600, 1200)
-    },
-    '16:9': {
-        '1280x720': (1280, 720),
-        '1920x1080': (1920, 1080),
-        '3840x2160': (3840, 2160)
-    }
-}
-
-
-def original_image_data(filename):
-    try:
-        img = cv2.imread(filename)
-        return img.shape[1], img.shape[0]
-    except AttributeError:
-        pass
+from image_functions import original_image_data, resize_image, reset_app
+from validations import validate_custom, output_path, dropdown_callback, output_path_dir
 
 
 def browse_file():
+    from resolution_dict import dropdown_var, aspect_var, path_var, width_image, height_image
     try:
         filename = filedialog.askopenfilename()
         x, y = original_image_data(filename)
         path_var.set(filename)
-        width.set(x)
-        height.set(y)
+        width_image.set(x)
+        height_image.set(y)
         image_obj = Image.open(filename)
         image_obj = ImageOps.exif_transpose(image_obj)
         w = 350
@@ -76,40 +42,32 @@ def browse_file():
         pass
 
 
-def output_path():
-    random_name = ''.join(random.choices(string.ascii_lowercase, k=5))
-    output = filedialog.asksaveasfilename(
-                defaultextension='.jpg', filetypes=[("JPEG", '*.jpg'), ("PNG", '*.png')],
-                initialdir=path_var.get(), initialfile=f'image_{random_name}_w_{width.get()}_h_{height.get()}',
-                title="Choose filename")
-    output_var.set(output)
-
-
-def validate_custom():
+def browse_folder():
+    from resolution_dict import dropdown_var, aspect_var, path_var
     try:
-        int(input_1.get())
-    except ValueError:
-        print(ValueError("Width is not int"))
-    try:
-        int(input_2.get())
-    except ValueError:
-        print(ValueError("Height is not int"))
-
-
-def dropdown_callback(*args):
-    try:
-        return picture_sizes[aspect_var.get()][dropdown_var.get()]
-    except KeyError:
-        pass
+        filepath = filedialog.askdirectory()
+        path_var.set(filepath)
+        image_obj = Image.open('folder.png')
+        image_asset = customtkinter.CTkImage(image_obj, size=(350, 350))
+        image_label.configure(image=image_asset, width=350, height=350)
+        image_label.image = image_asset
+        if filepath != '':
+            if input_1.get() != '' and input_2.get() != '' or aspect_var.get() != "Custom" and dropdown_var.get() != "-":
+                submit_button.configure(state='enable')
+        else:
+            submit_button.config(state="disabled")
+    except Exception as e:
+        print(f"Error while processing {filepath}: {e}")
 
 
 def aspect_call(*args):
+    from resolution_dict import aspect_var
     if aspect_var.get() == 'Custom':
         dropdown.set('-')
-        # submit_button.configure(state="disabled")
 
 
 def validate_input_submit(*args):
+    from resolution_dict import path_var
     if input_1.get() != '' and input_2.get() != '' and submit_button.cget('state') == 'enabled':
         pass
     elif path_var.get() != '':
@@ -122,6 +80,7 @@ def validate_input_submit(*args):
 
 
 def validate_dropdown_submit(*args):
+    from resolution_dict import dropdown_var, aspect_var, path_var
     if aspect_var.get() != "Custom" and dropdown_var.get() != "-" and submit_button.cget('state') == 'enabled':
         pass
     elif path_var.get() != '':
@@ -133,26 +92,40 @@ def validate_dropdown_submit(*args):
         submit_button.configure(state="disabled")
 
 
-def resize_image(image_route, width_int, height_int):
-    image = cv2.imread(image_route)
-    img_after = cv2.resize(image, (width_int, height_int))
-    return img_after
-
-
 def submit():
-    validate_custom()
-    output_path()
-    if aspect_var.get() == 'Custom':
-        img = resize_image(path_var.get(), int(input_1.get()), int(input_2.get()))
+    from resolution_dict import aspect_var, path_var, output_var
+    validate_custom(input_1, input_2)
+    if os.path.isfile(path_var.get()):
+        output_path()
+        if aspect_var.get() == 'Custom':
+            img = resize_image(path_var.get(), int(input_1.get()), int(input_2.get()))
+        else:
+            (x, y) = dropdown_callback()
+            img = resize_image(path_var.get(), x, y)
+
+        cv2.imwrite(output_var.get(), img)
+        image_label.configure(image=image)
+        reset_app()
     else:
-        (x, y) = dropdown_callback()
-        img = resize_image(path_var.get(), x, y)
-    cv2.imwrite(output_var.get(), img)
-    image_label.configure(image=image)
-    path_var.set('')
+        output_path_dir()
+        for filename in os.listdir(path_var.get()):
+            f = os.path.join(path_var.get(), filename)
+            if os.path.isfile(f):
+                if aspect_var.get() == 'Custom':
+                    img = resize_image(f, int(input_1.get()), int(input_2.get()))
+                else:
+                    (x, y) = dropdown_callback()
+                    img = resize_image(f, x, y)
+                random_name = ''.join(random.choices(string.ascii_lowercase, k=5))
+                save_each_file = os.path.join(output_var.get(),
+                                              f'image_{random_name}_w_{width_image.get()}_h_{height_image.get()}.jpg')
+                cv2.imwrite(save_each_file, img)
+        image_label.configure(image=image)
+        reset_app()
 
 
 def update_resolutions(*args):
+    from resolution_dict import picture_sizes, aspect_var
     submit_button.configure(state="disabled")
     aspect_ratio_set = aspect_var.get()
     if aspect_ratio_set == 'Custom':
@@ -175,22 +148,12 @@ def update_resolutions(*args):
 
 customtkinter.set_appearance_mode("System")  # Modes: system (default), light, dark
 customtkinter.set_default_color_theme("blue")
-
 root = customtkinter.CTk()
+from resolution_dict import picture_sizes, dropdown_var, aspect_var, path_var, width_image, height_image
 root.title("ImageResizer")
 root.geometry("410x550")
 root.minsize(650, 500)
 root.maxsize(650, 500)
-aspect_var = tk.StringVar()
-path_var = tk.StringVar()
-output_var = tk.StringVar()
-width = tk.StringVar()
-width.set("-")
-height = tk.StringVar()
-height.set("-")
-dropdown_var = tk.StringVar()
-dropdown_var.set("-")
-aspect_var.set("-")
 dropdown_var.trace("w", dropdown_callback)
 aspect_var.trace('w', update_resolutions)
 
@@ -200,13 +163,13 @@ default_image = Image.open("placeholder.jpg")
 default_image = default_image.resize((400, 400), Image.LANCZOS)
 
 browse_button = customtkinter.CTkButton(left_frame, text="Upload File", command=browse_file)
-browse_folder_button = customtkinter.CTkButton(left_frame, text="Upload Folder", command=browse_file)
+browse_folder_button = customtkinter.CTkButton(left_frame, text="Upload Folder", command=browse_folder)
 output_value = customtkinter.CTkLabel(right_frame, textvariable=path_var)
 
 width_label = customtkinter.CTkLabel(left_frame, text="Image Width:")
-width_value = customtkinter.CTkLabel(left_frame, textvariable=width)
+width_value = customtkinter.CTkLabel(left_frame, textvariable=width_image)
 height_label = customtkinter.CTkLabel(left_frame, text="Image Height:")
-height_value = customtkinter.CTkLabel(left_frame, textvariable=height)
+height_value = customtkinter.CTkLabel(left_frame, textvariable=height_image)
 
 dropdown_label = customtkinter.CTkLabel(left_frame, text="Change to:")
 aspect_ratios = list(picture_sizes.keys())
@@ -225,11 +188,11 @@ image_label = customtkinter.CTkLabel(right_frame, image=image, text='')
 
 submit_button = customtkinter.CTkButton(root, text="Submit", command=submit, state='disabled')
 
-#Frames
+# Frames
 left_frame.grid(row=0, column=0, rowspan=13, padx=5, pady=5)
 right_frame.grid(row=0, column=1, rowspan=13, padx=5, pady=5)
 
-#File browsing section
+# File browsing section
 browse_button.grid(row=0, column=0, padx=5, pady=5, sticky="w")
 browse_folder_button.grid(row=1, column=0, padx=5, pady=5, sticky="w")
 output_value.grid(row=13, column=1, padx=5, pady=5, sticky="w")
